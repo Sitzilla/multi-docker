@@ -1,0 +1,24 @@
+language: generic 
+sudo: required
+services:
+  -docker
+
+before_install:
+  - docker build -t sitzilla/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true sitzilla/react-test npm test
+
+after_success:
+  - docker build -t sitzilla/multi-client ./client
+  - docker build -t sitzilla/multi-nginx ./nginx
+  - docker build -t sitzilla/multi-server ./server
+  - docker build -t sitzilla/multi-worker ./worker
+
+  # Log in to docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Push built images to docker hub
+  - docker push sitzilla/multi-client
+  - docker push sitzilla/multi-nginx
+  - docker push sitzilla/multi-server
+  - docker push sitzilla/multi-worker
